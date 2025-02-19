@@ -4,20 +4,24 @@ FROM node:20
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the package.json and package-lock.json files to the container
+# Copy package.json and package-lock.json first
 COPY package*.json ./
 
-# Install the dependencies
+# Install dependencies
 RUN npm install
 
-# Copy the rest of the application's source code to the container
+# Install 'serve' globally
+RUN npm install -g serve
+
+# Copy the rest of the application
 COPY . .
 
 # Build the React.js application
 RUN npm run build
 
-# Expose the port that the application listens on
-EXPOSE 3001
+# Expose the correct port
+EXPOSE 3000
 
-# Start a simple web server to serve the built React.js files
-CMD [ "npx", "serve", "-s", "build" ]
+# Start the React app using serve
+CMD ["serve", "-s", "build", "-l", "3000"]
+

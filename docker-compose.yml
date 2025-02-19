@@ -19,7 +19,7 @@ services:
       context: ./backend # Specifies the build context directory for the backend
       dockerfile: Dockerfile # Specifies the Dockerfile to use for building the backend
     ports:
-      - 3000:3000 # Maps the container's port 3000 to the host's port 3000
+      - 4000:4000 # Maps the container's port 3000 to the host's port 3000
     networks:
       - sameNetworkAsMysql # Connects the service to the 'sameNetworkAsMysql' network
     depends_on:
@@ -30,7 +30,7 @@ services:
     build: # Builds the frontend app using the provided Dockerfile
       context: ./frontend # Specifies the build context directory for the frontend
     ports:
-      - 3001:3000 # Maps the container's port 3000 to the host's port 3001
+      - 3000:3000 # Maps the container's port 3000 to the host's port 3001
     networks:
       - sameNetworkAsMysql # Connects the service to the 'sameNetworkAsMysql' network
     depends_on:
