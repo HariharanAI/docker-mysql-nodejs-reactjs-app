@@ -1,6 +1,6 @@
 const express = require("express");
 const mysql = require("mysql2");
-var cors = require("cors");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 
 // Create the Express app
@@ -8,89 +8,86 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Create a connection to the MySQL database
+// MySQL Configuration
 const mysqlConfig = {
-  host: process.env.DB_HOST || "db",
+  host: process.env.DB_HOST || "mysql-service.default.svc.cluster.local",
   port: process.env.DB_PORT || "3306",
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "pass123",
   database: process.env.DB_NAME || "appdb",
 };
 
-let con = null;
-const databaseInit = () => {
-  con = mysql.createConnection(mysqlConfig);
-  con.connect((err) => {
-    if (err) {
-      console.error("Error connecting to the database: ", err);
-      return;
-    }
-    console.log("Connected to the database");
-  });
-};
+// Create a connection to the MySQL database
+let con = mysql.createConnection(mysqlConfig);
 
+con.connect((err) => {
+  if (err) {
+    console.error("Error connecting to the database: ", err);
+    process.exit(1); // Stop server if database connection fails
+  }
+  console.log("Connected to the database");
+});
+
+// Ensure database and table exist
 const createDatabase = () => {
-  con.query("CREATE DATABASE IF NOT EXISTS appdb", (err, results) => {
-    if (err) {
-      console.error(err);
-      return;
-    }
-    console.log("Database created successfully");
+  con.query("CREATE DATABASE IF NOT EXISTS appdb", (err) => {
+    if (err) console.error(err);
+    else console.log("Database checked/created successfully");
   });
 };
 
 const createTable = () => {
   con.query(
     "CREATE TABLE IF NOT EXISTS apptb (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255))",
-    (err, results) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      console.log("Table created successfully");
+    (err) => {
+      if (err) console.error(err);
+      else console.log("Table checked/created successfully");
     }
   );
 };
 
-// GET request
+// Initialize database and table
+createDatabase();
+createTable();
+
+// GET all users
 app.get("/user", (req, res) => {
-  databaseInit();
   con.query("SELECT * FROM apptb", (err, results) => {
     if (err) {
       console.error(err);
-      res.status(500).send("Error retrieving data from database");
-    } else {
-      res.json(results);
+      return res.status(500).json({ error: "Error retrieving data" });
     }
+    res.json(results);
   });
 });
 
-// POST request
+// POST - Add new user
 app.post("/user", (req, res) => {
-  con.query(
-    "INSERT INTO apptb (name) VALUES (?)",
-    [req.body.data],
-    (err, results) => {
-      if (err) {
-        console.error(err);
-        res.status(500).send("Error retrieving data from database");
-      } else {
-        res.json(results);
-      }
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: "Name is required" });
+
+  con.query("INSERT INTO apptb (name) VALUES (?)", [name], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Error inserting data" });
     }
-  );
+    res.json({ message: "User added", id: results.insertId });
+  });
 });
 
-app.post("/dbinit", (req, res) => {
-  databaseInit();
-  createDatabase();
-  res.json("Database created successfully");
-});
-
-app.post("/tbinit", (req, res) => {
-  databaseInit();
-  createTable();
-  res.json("Table created successfully");
+// DELETE - Remove user by ID
+app.delete("/user/:id", (req, res) => {
+  const { id } = req.params;
+  con.query("DELETE FROM apptb WHERE id = ?", [id], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Error deleting data" });
+    }
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ message: "User deleted" });
+  });
 });
 
 // Start the server

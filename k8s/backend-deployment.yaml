@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: hariharansv/ui-back-image:5
+          ports:
+            - containerPort: 4000
+          env:
+            - name: DB_HOST
+              value: "mysql-service.default.svc.cluster.local"  # ✅ Removed ":3306"
+            - name: DB_PORT
+              value: "3306"  # ✅ Added this
+            - name: DB_USER
+              value: "root"  # ✅ Ensure DB_USER is set
+            - name: DB_PASSWORD
+              value: "pass123"
+            - name: DB_NAME
+              value: "appdb"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 4000
+      targetPort: 4000
+  type: LoadBalancer

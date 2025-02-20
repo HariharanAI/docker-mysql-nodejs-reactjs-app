@@ -2,7 +2,8 @@ import "./App.css";
 import axios from "axios";
 import React, { useState, useEffect } from "react";
 
-const URL = "http://localhost:4000";
+const URL = "http://52.250.30.47:4000";
+
 function App() {
   const [data, setData] = useState([]);
   const [inputValue, setInputValue] = useState("");
@@ -14,7 +15,6 @@ function App() {
   const fetchData = async () => {
     try {
       const response = await axios.get(URL + "/user");
-      console.log(response.data);
       setData(response.data);
     } catch (error) {
       console.error(error);
@@ -27,9 +27,17 @@ function App() {
 
   const postData = async () => {
     try {
-      const response = await axios.post(URL + "/user", { data: inputValue });
-      console.log(response.data);
-      fetchData(); // Fetch data again after posting
+      await axios.post(URL + "/user", { name: inputValue });
+      fetchData(); // Refresh list after adding
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const deleteUser = async (id) => {
+    try {
+      await axios.delete(`${URL}/user/${id}`);
+      fetchData(); // Refresh list after deleting
     } catch (error) {
       console.error(error);
     }
@@ -37,8 +45,7 @@ function App() {
 
   const dbinit = async () => {
     try {
-      const response = await axios.post(URL + "/dbinit");
-      console.log(response.data);
+      await axios.post(URL + "/dbinit");
     } catch (error) {
       console.error(error);
     }
@@ -46,8 +53,7 @@ function App() {
 
   const tbinit = async () => {
     try {
-      const response = await axios.post(URL + "/tbinit");
-      console.log(response.data);
+      await axios.post(URL + "/tbinit");
     } catch (error) {
       console.error(error);
     }
@@ -78,6 +84,7 @@ function App() {
             <tr>
               <th>ID</th>
               <th>Name</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -85,6 +92,14 @@ function App() {
               <tr key={user.id}>
                 <td>{user.id}</td>
                 <td>{user.name}</td>
+                <td>
+                  <button
+                    onClick={() => deleteUser(user.id)}
+                    style={{ backgroundColor: "red", color: "white" }}
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
